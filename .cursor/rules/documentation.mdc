@@ -1,0 +1,7 @@
+---
+alwaysApply: true
+---
+Para documentacion usar Confluence
+- Si se pregunta por APIs a usar, deberan referenciar al site "Gobierno de APIs" (ID: 169476516)
+- Si se pregunta por sistemas de interseguro, deberan referenciar al site "Desarrollo TI" (ID: 55476481)
+- Para consulta de estado de tickets o historias de usuario, referenciar a Jira.

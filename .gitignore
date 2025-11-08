@@ -1,0 +1,21 @@
+# Ignore build artifacts
+dist/
+build/
+node_modules/
+
+# Ignore log files
+*.log
+
+# Ignore sensitive information
+secrets.txt
+.env
+
+# Ignore temporary files
+*.tmp
+
+# Ignore editor-specific files and directories
+.vscode/
+.idea/
+
+# Ignore TypeScript declaration files
+*.d.ts

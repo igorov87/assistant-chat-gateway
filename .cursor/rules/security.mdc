@@ -1,0 +1,175 @@
+---
+alwaysApply: true
+---
+
+# Seguridad Backend
+
+## Validación OBLIGATORIA en Rutas (Hapi + Joi)
+
+SIEMPRE usar validación Joi en rutas
+
+```typescript
+import * as Joi from 'joi';
+import { Request, ResponseToolkit } from '@hapi/hapi';
+import * as Boom from '@hapi/boom';
+
+const createOrderSchema = Joi.object({
+  customerId: Joi.string().uuid().required(),
+  items: Joi.array().items(Joi.object({
+    productId: Joi.string().uuid().required(),
+    quantity: Joi.number().integer().min(1).max(999).required(),
+    price: Joi.number().precision(2).positive().required()
+  })).min(1).required(),
+  totalAmount: Joi.number().precision(2).positive().required(),
+  notes: Joi.string().max(1000).optional()
+});
+
+export const createOrderRoute = {
+  method: 'POST',
+  path: '/api/orders',
+  options: {
+    validate: {
+      payload: createOrderSchema,
+      failAction: (request: Request, h: ResponseToolkit, err: any) => {
+        const ctx = getContext(request);
+        getLogger(ctx).warn('Validation failed', { errors: err.details });
+        return Boom.badRequest('Invalid request data');
+      }
+    }
+  },
+  handler: createOrderHandler
+};
+```
+
+## Consultas Seguras TypeORM
+SIEMPRE usar Query Builder o Repository methods
+```typescript
+export class OrderRepository {
+  private repository = dataSource.getRepository(Order);
+
+  // ✅ Correcto - Query Builder con parámetros
+  async findByCustomer(ctx: Context, customerId: string): Promise<Order[]> {
+    getLogger(ctx).debug('Finding orders', { customerId });
+    
+    return await this.repository.createQueryBuilder('order')
+      .where('order.customerId = :customerId', { customerId })
+      .getMany();
+  }
+
+  // ✅ Correcto - Repository methods
+  async findById(ctx: Context, id: string): Promise<Order | null> {
+    if (!validator.isUUID(id)) return null;
+    
+    return await this.repository.findOne({
+      where: { id },
+      relations: ['items']
+    });
+  }
+
+  // ❌ PROHIBIDO - Raw queries sin parámetros
+  async findByCustomerWrong(customerId: string): Promise<Order[]> {
+    // NUNCA: `SELECT * FROM orders WHERE customer_id = '${customerId}'`
+  }
+}
+```
+
+## Sanitización de Datos
+OBLIGATORIO - Sanitizar antes de procesar
+```typescript
+import * as validator from 'validator';
+
+export class OrderEntity {
+  constructor(data: any) {
+    this.customerId = validator.escape(data.customerId?.trim() || '');
+    this.notes = data.notes ? this.sanitizeText(data.notes) : undefined;
+  }
+
+  private sanitizeText(text: string): string {
+    return validator.escape(text.trim()).substring(0, 1000);
+  }
+}
+```
+
+## Validaciones de Negocio
+OBLIGATORIO - Validar lógica de negocio
+```typescript
+export class OrderService {
+  async createOrder(ctx: Context, orderData: OrderEntity): Promise<Order> {
+    // Validar integridad de negocio
+    const errors = await this.validateBusinessLogic(ctx, orderData);
+    if (errors.length > 0) {
+      throw new BusinessError('Validation failed', 422, errors);
+    }
+
+    const order = await this.orderRepository.create(ctx, orderData);
+    
+    logSecurityEvent(ctx, 'ORDER_CREATED', {
+      orderId: order.id,
+      customerId: orderData.customerId
+    });
+    
+    return order;
+  }
+
+  private async validateBusinessLogic(ctx: Context, data: OrderEntity): Promise<string[]> {
+    const errors: string[] = [];
+    
+    // Validar customer existe
+    const customer = await this.customerRepository.findById(ctx, data.customerId);
+    if (!customer || customer.status !== 'active') {
+      errors.push('Invalid customer');
+    }
+    
+    // Validar cálculo total
+    const calculatedTotal = data.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+    if (Math.abs(calculatedTotal - data.totalAmount) > 0.01) {
+      errors.push('Invalid total amount');
+    }
+    
+    return errors;
+  }
+}
+
+export class BusinessError extends Error {
+  constructor(public message: string, public statusCode: number = 400, public details: string[] = []) {
+    super(message);
+  }
+}
+```
+## Manejo de Errores Seguro
+OBLIGATORIO - Error handler para Hapi
+```typescript
+export const errorHandlerPlugin = {
+  name: 'error-handler',
+  register: async (server: any) => {
+    server.ext('onPreResponse', (request: Request, h: ResponseToolkit) => {
+      const response = request.response;
+      if (!response.isBoom) return h.continue;
+
+      const ctx = getContext(request);
+      const error = response as any;
+
+      // Log para debugging (sin enviar al cliente)
+      getLogger(ctx).error('API Error', {
+        message: error.message,
+        statusCode: error.output.statusCode,
+        url: request.url.pathname
+      });
+
+      // Respuesta segura al cliente
+      const statusCode = error.output.statusCode;
+      if (statusCode >= 400 && statusCode < 500) {
+        return h.response({
+          error: error.message,
+          transactionId: ctx?.transactionId
+        }).code(statusCode);
+      } else {
+        return h.response({
+          error: 'Internal server error',
+          transactionId: ctx?.transactionId
+        }).code(500);
+      }
+    });
+  }
+};
+```

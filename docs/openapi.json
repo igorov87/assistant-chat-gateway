@@ -1,0 +1,124 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Assistant Gateway",
+    "description": "API Gateway para la seguridad de los asistentes de IA",
+    "version": "1.0.0",
+    "contact": {
+      "name": "Interseguro GENAI Team"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080",
+      "description": "Servidor de desarrollo local"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Agent",
+      "description": "Endpoints relacionados con el agente AI y generación de respuestas"
+    }
+  ],
+  "paths": {
+    "/v1/llm/stream/question": {
+      "post": {
+        "tags": ["Agent"],
+        "summary": "Obtener respuesta en streaming del agente AI",
+        "description": "Envía una pregunta al agente AI y obtiene una respuesta en tiempo real mediante streaming",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/QuestionInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Stream de respuesta exitoso",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "Stream de eventos del servidor con datos de respuesta"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Entrada inválida",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "QuestionInput": {
+        "type": "object",
+        "required": ["user", "assistant", "question", "assistantName"],
+        "properties": {
+          "user": {
+            "type": "string",
+            "description": "ID del usuario que hace la pregunta"
+          },
+          "assistant": {
+            "type": "string",
+            "description": "ID del asistente AI"
+          },
+          "question": {
+            "type": "string",
+            "description": "Pregunta a realizar al agente AI"
+          },
+          "assistantName": {
+            "type": "string",
+            "description": "Nombre del asistente AI"
+          },
+          "conversationId": {
+            "type": "string",
+            "nullable": true,
+            "description": "ID de la conversación (opcional)"
+          },
+          "history": {
+            "type": "string",
+            "default": "",
+            "description": "Historial de conversación"
+          },
+          "memory": {
+            "type": "boolean",
+            "default": true,
+            "description": "Usar memoria para la conversación"
+          },
+          "networkUser": {
+            "type": "string",
+            "default": "",
+            "description": "Usuario de red"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": ["ERROR"]
+          },
+          "message": {
+            "type": "string",
+            "description": "Descripción del error"
+          }
+        }
+      }
+    }
+  }
+}

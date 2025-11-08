@@ -1,0 +1,110 @@
+---
+alwaysApply: true
+---
+# Estándares de Código
+
+## Nomenclatura OBLIGATORIA
+
+- **Variables y funciones**: camelCase
+- **Clases e Interfaces**: PascalCase  
+- **Constantes**: UPPER_SNAKE_CASE
+- **Archivos**: kebab-case (order.service.ts)
+- **Enums**: PascalCase con valores UPPER_SNAKE_CASE
+
+## Límites de Código OBLIGATORIOS
+
+- **Funciones**: máximo 50 líneas
+- **Clases**: máximo 500 líneas
+
+## Organización de Imports
+OBLIGATORIO - Orden específico:
+
+Ejemplos:
+```typescript
+// 1. Node.js nativo
+import * as crypto from 'crypto';
+
+// 2. Dependencias externas  
+import { Request, ResponseToolkit } from '@hapi/hapi';
+import * as Joi from 'joi';
+
+// 3. Internos absolutos
+import { getLogger } from '../utils/logger';
+import { Context } from '../middleware/context';
+
+// 4. Relativos
+import { OrderRepository } from './order.repository';
+```
+
+## Early Returns Obligatorio
+OBLIGATORIO - Early returns para validaciones.
+
+Ejemplos:
+```typescript
+export async function processOrder(ctx: Context, orderId: string): Promise<OrderResult> {
+  if (!orderId) {
+    throw new BusinessError('Order ID required');
+  }
+
+  const order = await this.findById(ctx, orderId);
+  if (!order) {
+    throw new BusinessError('Order not found');
+  }
+
+  // Lógica principal al final
+  return this.executeProcessing(ctx, order);
+}
+```
+
+## TypeScript Obligatorio
+
+- **Tipos explícitos** en parámetros y retornos de funciones
+- **Optional chaining** (`order?.customer?.email`)
+- **Nunca usar `any`**
+
+## Single Responsibility
+Una responsabilidad por clase
+```typescript
+export class OrderValidator {
+  validateOrder(order: OrderEntity): string[] { }
+}
+
+export class OrderCalculator {
+  calculateTotal(items: OrderItem[]): number { }
+}
+
+export class OrderNotifier {
+  sendConfirmation(order: Order): Promise<void> { }
+}
+
+// ❌ No tener múltiples responsabilidades en una clase
+export class OrderHandler {
+  validateOrder() { }     // Validación
+  calculateTotal() { }    // Cálculo  
+  sendEmail() { }         // Notificación
+  saveToDatabase() { }    // Persistencia
+}
+```
+
+## Manejo de Arrays y Objetos
+
+- **Desestructuración** para extraer propiedades
+- **Template literals** para strings compuestos
+- **Array methods funcionales** (map, filter, reduce) en lugar de loops
+- **const por defecto**, let solo cuando sea necesario
+
+## JSDoc para Funciones Públicas
+OBLIGATORIO - JSDoc para funciones públicas exportadas
+```typescript
+/**
+ * Creates order with validation and business logic
+ * @param ctx - Application context for tracing
+ * @param orderData - Validated order data
+ * @returns Created order with generated ID
+ * @throws BusinessError when validation fails
+ */
+export async function createOrder(ctx: Context, orderData: OrderEntity): Promise<Order> { }
+```
+
+# Documentación de API
+- En cada actualizacion de las APIs se deberán registrar/actualizar el OpenAPI version 3 en la ruta "docs/openapi.json".
