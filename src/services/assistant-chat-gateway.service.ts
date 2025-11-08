@@ -12,14 +12,14 @@ export class AssistantChatGatewayService {
     getLogger(ctx).debug(`streamQuestion - Preparando llamada al backend LLM`);
 
     // Headers a propagar (incluir Authorization si viene)
-    const forward_headers: Record<string, string> = {};
+    const forwardHeaders: Record<string, string> = {};
     const authHeader = request.headers['authorization'];
     if (authHeader) {
-      forward_headers['Authorization'] = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+      forwardHeaders['Authorization'] = Array.isArray(authHeader) ? authHeader[0] : authHeader;
     }
     
     getLogger(ctx).debug('streamQuestion - Enviando petición al backend');
-    const response = await agentClient.streamQuestion(payload, forward_headers);
+    const response = await agentClient.streamQuestion(payload, forwardHeaders);
     
     // Retornamos directamente el stream de datos para permitir streaming en tiempo real
     getLogger(ctx).debug('streamQuestion - Stream recibido del backend, retornando stream directo');
