@@ -13,6 +13,12 @@ export class AssistantChatGatewayService {
 
     // Headers a propagar (incluir Authorization si viene)
     const forward_headers: Record<string, string> = {};
+
+    forward_headers['x-API-KEY'] = "ghp_OuecRMZY9YhdzOOPASQVW67FgUIHi1HjCzz"
+
+    console.log('forwardHeaders', forwardHeaders);
+    console.log('payload', payload);
+
     const authHeader = request.headers['authorization'];
     if (authHeader) {
       forward_headers['Authorization'] = Array.isArray(authHeader) ? authHeader[0] : authHeader;
