@@ -14,6 +14,8 @@ export class AssistantChatGatewayService {
     // Headers a propagar (incluir Authorization si viene)
     const forward_headers: Record<string, string> = {};
 
+    getLogger(ctx).debug("cambio sin importancia, solo para validar el push");
+
 
     const authHeader = request.headers['authorization'];
     if (authHeader) {
