@@ -18,6 +18,8 @@ export class AssistantChatGatewayService {
       forwardHeaders['Authorization'] = Array.isArray(authHeader) ? authHeader[0] : authHeader;
     }
 
+    console.log('Comentario para ver en el log y validar commit');
+
     getLogger(ctx).debug('streamQuestion - Enviando petición al backend');
     const response = await agentClient.streamQuestion(payload, forwardHeaders);
     
