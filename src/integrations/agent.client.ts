@@ -47,6 +47,24 @@ export class AgentClient {
 
     return this.httpClient.post(`/v1/llm/stream/question`, input, config);
   }
+
+  /**
+   * Obtiene el historial de conversaciones de un usuario del backend LLM.
+   * @param idUsuario - Identificador del usuario
+   * @param headers - Headers a propagar al backend
+   * @returns Historial de conversaciones del usuario
+   */
+  async getHistory(idUsuario: string, headers: Record<string, string>) {
+    const config: AxiosRequestConfig = {
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      timeout: 30000
+    };
+
+    return this.httpClient.get(`/v1/llm/history/${idUsuario}`, config);
+  }
 }
 
 export const agentClient = new AgentClient();

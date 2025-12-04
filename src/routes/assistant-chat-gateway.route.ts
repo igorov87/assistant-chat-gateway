@@ -44,5 +44,37 @@ export const assistantChatGatewayRoutes = (server: Server) => {
     },
     handler: assistantChatGatewayController.postStreamQuestion
   });
+
+  server.route({
+    method: 'GET',
+    path: '/v1/llm/history/{idUsuario}',
+    options: {
+      description: 'Obtener historial de conversaciones de un usuario',
+      notes: 'Retorna el historial de conversaciones del usuario especificado',
+      tags: ['api'],
+      pre: [
+        { method: validateFirebaseToken }
+      ],
+      validate: {
+        headers: Joi.object({
+          authorization: Joi.string().pattern(/^Bearer\s+[^\s]+$/i).required()
+        }).options({ allowUnknown: true }),
+        params: Joi.object({
+          idUsuario: Joi.string().required()
+        }),
+        failAction: (request: Request, h: ResponseToolkit, err: any) => {
+          const details = err?.details || [];
+          const missingAuth = details.find((d: any) => d?.path?.[0] === 'authorization' && d?.type === 'any.required');
+          if (missingAuth) {
+            // 401 cuando falta Authorization
+            throw Boom.unauthorized('Missing Authorization header', 'Bearer');
+          }
+          console.warn('Validation failed', { errors: err?.details });
+          throw err;
+        }
+      }
+    },
+    handler: assistantChatGatewayController.getHistory
+  });
   
 };
