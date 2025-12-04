@@ -25,6 +25,30 @@ export class AssistantChatGatewayService {
     getLogger(ctx).debug('streamQuestion - Stream recibido del backend, retornando stream directo');
     return response.data;
   }
+
+  /**
+   * Obtiene el historial de conversaciones de un usuario del backend LLM
+   * @param ctx - Application context for tracing
+   * @param idUsuario - Identificador del usuario
+   * @param request - Request de Hapi para obtener headers
+   * @returns Historial de conversaciones del usuario
+   */
+  async getHistory(ctx: Context, idUsuario: string, request: Request) {
+    getLogger(ctx).debug(`getHistory - Obteniendo historial para usuario: ${idUsuario}`);
+
+    // Headers a propagar (incluir Authorization si viene)
+    const forwardHeaders: Record<string, string> = {};
+    const authHeader = request.headers['authorization'];
+    if (authHeader) {
+      forwardHeaders['Authorization'] = Array.isArray(authHeader) ? authHeader[0] : authHeader;
+    }
+
+    getLogger(ctx).debug('getHistory - Enviando petición al backend');
+    const response = await agentClient.getHistory(idUsuario, forwardHeaders);
+    
+    getLogger(ctx).debug('getHistory - Historial obtenido exitosamente');
+    return response.data;
+  }
 }
 
 export const assistantChatGatewayService = new AssistantChatGatewayService();
