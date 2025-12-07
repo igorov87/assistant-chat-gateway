@@ -14,3 +14,8 @@ export interface ErrorResponse {
   message: string;
 }
 
+export interface HistoryResponse {
+  userId: string;
+  conversations: any[];
+}
+

@@ -26,6 +26,11 @@
         "tags": ["Agent"],
         "summary": "Obtener respuesta en streaming del agente AI",
         "description": "Envía una pregunta al agente AI y obtiene una respuesta en tiempo real mediante streaming",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -57,12 +62,105 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "No autorizado - Token inválido o faltante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/llm/history/{idUsuario}": {
+      "get": {
+        "tags": ["Agent"],
+        "summary": "Obtener historial de conversaciones de un usuario",
+        "description": "Retorna el historial completo de conversaciones del usuario especificado",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "idUsuario",
+            "in": "path",
+            "required": true,
+            "description": "Identificador único del usuario",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Historial obtenido exitosamente",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Parámetros inválidos",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "No autorizado - Token inválido o faltante",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Historial no encontrado",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Error interno del servidor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
         }
       }
     }
   },
   "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Token de autenticación Firebase"
+      }
+    },
     "schemas": {
       "QuestionInput": {
         "type": "object",
@@ -103,6 +201,23 @@
             "type": "string",
             "default": "",
             "description": "Usuario de red"
+          }
+        }
+      },
+      "HistoryResponse": {
+        "type": "object",
+        "properties": {
+          "userId": {
+            "type": "string",
+            "description": "ID del usuario"
+          },
+          "conversations": {
+            "type": "array",
+            "description": "Lista de conversaciones del usuario",
+            "items": {
+              "type": "object",
+              "description": "Datos de la conversación"
+            }
           }
         }
       },

@@ -74,6 +74,42 @@ export const postStreamQuestion = async (request: Request, h: ResponseToolkit) =
   }
 }
 
+export const getHistory = async (request: Request, h: ResponseToolkit) => {
+  const ctx = getContext(request);
+  const authenticatedUser = getAuthenticatedUser(request);
+  const idUsuario = request.params.idUsuario;
+  
+  getLogger(ctx).debug('getHistory - Inicio', { 
+    userEmail: authenticatedUser.email,
+    userId: authenticatedUser.sub,
+    idUsuario 
+  });
+  
+  try {
+    const history = await assistantChatGatewayService.getHistory(ctx, idUsuario, request);
+    
+    getLogger(ctx).debug('getHistory - Historial obtenido exitosamente');
+    return h.response(history);
+    
+  } catch (error: any) {
+    getLogger(ctx).error('getHistory - Error:', error);
+    
+    if (error.response) {
+      const statusCode = error.response.status;
+      if (statusCode === 404) {
+        return Boom.notFound('Historial no encontrado');
+      }
+      if (statusCode === 401 || statusCode === 403) {
+        return Boom.unauthorized('No autorizado');
+      }
+    }
+    
+    const e = Boom.internal('Error interno');
+    e.output.payload.message = 'Error al obtener el historial';
+    return e;
+  }
+}
+
 const getContext = (request: Request): Context => {
   return (request.app as ContextRequestApplicationState).context;
 }
